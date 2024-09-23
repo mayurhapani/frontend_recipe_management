@@ -1,176 +1,108 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useContext, useState } from "react";
+import { AuthContext } from "../context/AuthProvider";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import TaskCard from "../components/TaskCard";
-import { AuthContext } from "../context/AuthProvider";
-import Cookies from "universal-cookie";
-import { subscribeToTaskUpdates } from "../js/socket.js";
-import { messaging, requestPermission, onMessageListener } from "../firebase";
-import { onMessage } from "firebase/messaging";
-
-const cookies = new Cookies();
+import RecipeCard from "../components/RecipeCard";
 
 export default function Home() {
-  const [user, setUser] = useState({});
-  const [tasks, setTasks] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [cuisines, setCuisines] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const { isRefresh } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { checkLoginStatus } = useContext(AuthContext);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || cookies.get("token");
-
-    if (!token) {
-      navigate("/signin");
-      return;
-    }
-
-    const setupNotifications = async () => {
-      const fcmToken = await requestPermission();
-      if (fcmToken) {
-        // Send fcmToken to your backend
-        try {
-          await axios.patch(
-            `${BASE_URL}/users/updateFcmToken`,
-            { fcmToken },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          console.log("FCM token updated successfully");
-        } catch (error) {
-          console.error("Error updating FCM token:", error);
-        }
-      }
-    };
-
-    setupNotifications();
-
-    // Fetch tasks when component mounts
-    const fetchTasks = async () => {
+    // Fetch recipes when component mounts
+    const fetchRecipes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/tasks/getTasks`, {
-          withCredentials: true,
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
-        const tasks = response.data.data;
+        const response = await axios.get(`${BASE_URL}/Recipes/getRecipes`);
+        const fetchedRecipes = response.data.data;
+        setRecipes(fetchedRecipes);
 
-        const categoryOrder = { high: 1, medium: 2, low: 3 };
-
-        const sortedTasks = tasks.sort((a, b) => {
-          if (a.isCompleted !== b.isCompleted) {
-            return a.isCompleted - b.isCompleted;
-          }
-          return categoryOrder[a.category] - categoryOrder[b.category];
-        });
-
-        setTasks(sortedTasks);
+        // Extract unique cuisines
+        const uniqueCuisines = [...new Set(fetchedRecipes.map((recipe) => recipe.cuisine))];
+        setCuisines(uniqueCuisines);
       } catch (error) {
-        if (error.response) {
-          toast.error(error.response.data.message);
-        } else {
-          toast.error(error.message);
-        }
+        toast.error("Failed to fetch recipes");
       }
     };
 
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/users/getUser`, {
-          withCredentials: true,
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
+    fetchRecipes();
+  }, [BASE_URL]);
 
-        setUser(response.data.data);
-      } catch (error) {
-        if (error.response) {
-          toast.error(error.response.data.message);
-        } else {
-          toast.error(error.message);
-        }
-      }
-    };
+  const filteredRecipes = recipes.filter(
+    (recipe) =>
+      recipe.cuisine.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recipe.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    fetchUser();
-    fetchTasks();
-
-    // Subscribe to real-time updates
-    subscribeToTaskUpdates((updatedTask) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task))
-      );
-      toast.info("Task updated in real-time!");
-    });
-
-    // Handle foreground messages
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("Received foreground message:", payload);
-      toast.info(payload.notification.title, {
-        body: payload.notification.body,
-      });
-      // Optionally, you can update the tasks list here
-      fetchTasks();
-    });
-
-    return () => {
-      if (unsubscribe && typeof unsubscribe === "function") {
-        unsubscribe();
-      }
-    };
-  }, [BASE_URL, navigate, isRefresh]);
-
-  const sendTestNotification = async () => {
-    const token = localStorage.getItem("token") || cookies.get("token");
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/users/sendTestNotification`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("Test notification sent", response.data);
-    } catch (error) {
-      console.error("Error sending test notification:", error.response?.data || error.message);
-      if (error.response?.data?.details) {
-        console.error("Detailed error:", error.response.data.details);
-      }
-    }
-  };
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
 
   return (
-    <div className="bg-red-200 min-h-screen">
-      <div className="container mx-auto ">
-        <div className="pt-28 flex flex-col items-center">
-          <div className="w-2/3 rounded-sm">
-            <div className="mb-4">
-              <h1 className="text-grey-darkest text-3xl font-bold text-center">
-                Welcome {user?.name}
-              </h1>
+    <div className="bg-gradient-to-r from-orange-100 to-yellow-100 min-h-screen">
+      <div className="container mx-auto px-4 pt-20 pb-8">
+        <h1 className="text-4xl font-bold text-center text-orange-800 mb-8">
+          Delicious Recipes from Around the World
+        </h1>
+
+        {/* Search input */}
+        <div className="mb-8">
+          <div className="max-w-md mx-auto">
+            <div className="relative flex items-center w-full h-12 rounded-lg focus-within:shadow-lg bg-white overflow-hidden">
+              <div className="grid place-items-center h-full w-12 text-gray-300">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                className="peer h-full w-full outline-none text-sm text-gray-700 pr-2"
+                type="text"
+                id="search"
+                placeholder="Search cuisines or recipes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <div className="mb-4">
-              <h1 className="text-grey-darkest text-xl font-bold">Todo List</h1>
-            </div>
-            {tasks.length > 0 ? (
-              tasks.map((task, index) => {
-                return <TaskCard task={task} key={index} user={user} />;
-              })
-            ) : (
-              <p>No posts available</p>
-            )}
-            <button onClick={sendTestNotification}>Send Test Notification</button>
           </div>
+        </div>
+
+        {/* Cuisine tags */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {cuisines.map((cuisine) => (
+            <button
+              key={cuisine}
+              onClick={() => setSearchTerm(cuisine)}
+              className="px-4 py-2 text-sm font-medium bg-white text-orange-700 hover:bg-orange-50 border border-orange-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              {cuisine}
+            </button>
+          ))}
+        </div>
+
+        {/* Recipe grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredRecipes.length > 0 ? (
+            filteredRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
+          ) : (
+            <p className="text-center col-span-full text-gray-600">
+              No recipes found for &ldquo;{searchTerm}&rdquo;.
+            </p>
+          )}
         </div>
       </div>
     </div>

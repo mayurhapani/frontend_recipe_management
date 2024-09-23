@@ -1,52 +1,81 @@
-import { createContext, useEffect, useState } from "react";
-import PropTypes from "prop-types";
-import Cookies from "universal-cookie";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
+import PropTypes from "prop-types";
 
-const cookies = new Cookies();
+// Set axios to always send credentials
+axios.defaults.withCredentials = true;
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [logInUser, setLogInUser] = useState({});
-  const [isRefresh, setIsRefresh] = useState(false);
-
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
+  const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/users/getUser`, {
-          withCredentials: true,
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        });
-        setLogInUser(response.data.user);
-      } catch (error) {
-        if (error.response) {
-          toast.error(error.response.data.message);
-        } else {
-          toast.error(error.message);
-        }
-      }
-    };
-
-    const token = localStorage.getItem("token") || cookies.get("token");
-    if (token) {
-      setIsLoggedIn(true);
-      fetchUser();
-    } else {
-      setIsLoggedIn(false);
-    }
+    checkLoginStatus();
   }, []);
 
+  const checkLoginStatus = async () => {
+    try {
+      console.log("Checking login status...");
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/users/getUser`);
+      console.log("Login status response:", response.data);
+      if (response.data.data) {
+        setIsLoggedIn(true);
+        setUserName(response.data.data.name);
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+      }
+    } catch (error) {
+      console.log("Error checking login status:", error);
+      setIsLoggedIn(false);
+      setUserName("");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      console.log("Attempting login...");
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, {
+        email,
+        password,
+      });
+      console.log("Login response:", response.data);
+      if (response.data.data) {
+        setIsLoggedIn(true);
+        setUserName(response.data.data.user.name);
+        // Immediately check login status after successful login
+        await checkLoginStatus();
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Login error:", error.response ? error.response.data : error.message);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      console.log("Attempting logout...");
+      await axios.get(`${import.meta.env.VITE_BASE_URL}/users/logout`, { withCredentials: true });
+      setIsLoggedIn(false);
+      setUserName("");
+      console.log("Logout successful");
+    } catch (error) {
+      console.error("Logout error:", error.response ? error.response.data : error.message);
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or any loading indicator you prefer
+  }
+
   return (
-    <AuthContext.Provider
-      value={{ isRefresh, setIsRefresh, isLoggedIn, setIsLoggedIn, logInUser, setLogInUser }}
-    >
+    <AuthContext.Provider value={{ isLoggedIn, userName, login, logout, checkLoginStatus }}>
       {children}
     </AuthContext.Provider>
   );

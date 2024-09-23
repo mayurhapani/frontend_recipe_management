@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
 // import Cookies from "universal-cookie";
 import { AuthContext } from "../context/AuthProvider";
@@ -10,10 +9,8 @@ import { AuthContext } from "../context/AuthProvider";
 export default function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setIsLoggedIn } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const notify1 = (msg) => toast.error(msg);
   const notify2 = (msg) => toast.success(msg);
@@ -31,41 +28,21 @@ export default function Signin() {
     }
     if (!passwordRegex.test(password)) {
       notify1(
-        "Invalid password format,  must contain a number, must contain one lowercase, must contain one uppercase, must contain one special character, password must be 8-16 characters long"
+        "Invalid password format, must contain a number, must contain one lowercase, must contain one uppercase, must contain one special character, password must be 8-16 characters long"
       );
       return;
     }
 
     try {
-      const response = await axios.post(
-        `${BASE_URL}/users/login`,
-        {
-          email,
-          password,
-        },
-        { withCredentials: true }
-      );
-
-      if (response.status === 200) {
-        const token = response.data.data.token;
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("id", response.data.data.user._id);
-        setIsLoggedIn(true);
-
-        notify2(response.data.message);
-        navigate("/");
-      } else {
-        notify1(response.data.message);
-        navigate("/signin");
-      }
+      const response = await login(email, password);
+      notify2(response.message);
+      navigate("/");
     } catch (error) {
       if (error.response) {
         notify1(error.response.data.message);
       } else {
         notify1(error.message);
       }
-      navigate("/signin");
     }
   };
 

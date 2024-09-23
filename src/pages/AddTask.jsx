@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { notifyTaskUpdate } from "../js/socket.js";
+// import { notifyTaskUpdate } from "../js/socket.js";
 
 export default function AddTask() {
   const [title, setTitle] = useState("");
@@ -37,7 +37,6 @@ export default function AddTask() {
         }
       );
 
-      notifyTaskUpdate(response.data.message);
       toast.success(response.data.message);
       navigate("/");
     } catch (error) {

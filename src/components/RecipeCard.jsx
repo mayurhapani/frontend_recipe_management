@@ -5,7 +5,7 @@ import { useContext } from "react";
 import { AuthContext } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
-export default function TaskCard({ task, user }) {
+export default function RecipeCard({ task, user }) {
   const { isRefresh, setIsRefresh } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -157,7 +157,7 @@ export default function TaskCard({ task, user }) {
   );
 }
 
-TaskCard.propTypes = {
+RecipeCard.propTypes = {
   task: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
 };
