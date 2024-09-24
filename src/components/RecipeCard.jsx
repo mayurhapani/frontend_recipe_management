@@ -3,7 +3,6 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthProvider";
-// import { useNavigate } from "react-router-dom";
 import { FaClock, FaUtensils, FaEdit, FaTrash } from "react-icons/fa";
 import EditRecipeModal from "./EditRecipeModal";
 
@@ -17,7 +16,6 @@ export default function RecipeCard({
   isProfilePage = false,
 }) {
   const { user } = useContext(AuthContext);
-  // const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
