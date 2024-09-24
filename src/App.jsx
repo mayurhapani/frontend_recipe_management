@@ -1,12 +1,12 @@
 import { useContext } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthContext } from "./context/AuthProvider";
-import Header from "./components/Header";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import SignUp from "./pages/SignUp";
-import Signin from "./pages/Signin";
-import GlobalLoader from "./components/GlobalLoader";
+import { AuthContext } from "./context/AuthProvider.jsx";
+import Header from "./components/Header.jsx";
+import Home from "./pages/Home.jsx";
+import Profile from "./pages/Profile.jsx";
+import SignUp from "./pages/SignUp.jsx";
+import Signin from "./pages/Signin.jsx";
+import GlobalLoader from "./components/GlobalLoader.jsx";
 
 function App() {
   const { loading } = useContext(AuthContext);
