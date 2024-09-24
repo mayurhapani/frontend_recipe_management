@@ -4,9 +4,9 @@ import { AuthContext } from "./context/AuthProvider.jsx";
 import Header from "./components/Header.jsx";
 import Home from "./pages/Home.jsx";
 import Profile from "./pages/Profile.jsx";
-import SignUp from "./pages/SignUp.jsx";
 import Signin from "./pages/Signin.jsx";
 import GlobalLoader from "./components/GlobalLoader.jsx";
+import Signup from "./pages/SignUp.jsx";
 
 function App() {
   const { loading } = useContext(AuthContext);
@@ -23,7 +23,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/signin" element={<Signin />} />
-              <Route path="/signup" element={<SignUp />} />
+              <Route path="/signup" element={<Signup />} />
             </Routes>
           )}
         </main>
