@@ -9,7 +9,7 @@ export default function Home() {
   const [cuisines, setCuisines] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { checkLoginStatus } = useContext(AuthContext);
+  const { isLoggedIn, user, loading } = useContext(AuthContext);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -17,12 +17,14 @@ export default function Home() {
     // Fetch recipes when component mounts
     const fetchRecipes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/Recipes/getRecipes`);
+        const response = await axios.get(`${BASE_URL}/Recipes/getAllRecipes`);
         const fetchedRecipes = response.data.data;
         setRecipes(fetchedRecipes);
 
         // Extract unique cuisines
-        const uniqueCuisines = [...new Set(fetchedRecipes.map((recipe) => recipe.cuisine))];
+        const uniqueCuisines = [
+          ...new Set(fetchedRecipes.map((recipe) => recipe.cuisine).filter(Boolean)),
+        ];
         setCuisines(uniqueCuisines);
       } catch (error) {
         toast.error("Failed to fetch recipes");
@@ -32,15 +34,17 @@ export default function Home() {
     fetchRecipes();
   }, [BASE_URL]);
 
-  const filteredRecipes = recipes.filter(
-    (recipe) =>
-      recipe.cuisine.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecipes = recipes.filter((recipe) => {
+    const cuisineMatch =
+      recipe.cuisine && recipe.cuisine.toLowerCase().includes(searchTerm.toLowerCase());
+    const titleMatch =
+      recipe.title && recipe.title.toLowerCase().includes(searchTerm.toLowerCase());
+    return cuisineMatch || titleMatch;
+  });
 
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
+  if (loading) {
+    return <div>Loading...</div>; // Or a more sophisticated loading component
+  }
 
   return (
     <div className="bg-gradient-to-r from-orange-100 to-yellow-100 min-h-screen">
@@ -48,6 +52,12 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center text-orange-800 mb-8">
           Delicious Recipes from Around the World
         </h1>
+
+        {isLoggedIn ? (
+          <p className="text-center mb-8">Welcome back, {user.name}!</p>
+        ) : (
+          <p className="text-center mb-8">Please sign in to manage your recipes.</p>
+        )}
 
         {/* Search input */}
         <div className="mb-8">
@@ -97,7 +107,7 @@ export default function Home() {
         {/* Recipe grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredRecipes.length > 0 ? (
-            filteredRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
+            filteredRecipes.map((recipe) => <RecipeCard key={recipe._id} recipe={recipe} />)
           ) : (
             <p className="text-center col-span-full text-gray-600">
               No recipes found for &ldquo;{searchTerm}&rdquo;.

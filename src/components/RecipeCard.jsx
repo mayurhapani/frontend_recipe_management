@@ -1,163 +1,87 @@
 import PropTypes from "prop-types";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
-export default function RecipeCard({ task, user }) {
-  const { isRefresh, setIsRefresh } = useContext(AuthContext);
+export default function RecipeCard({ recipe, onDelete = () => {}, isProfilePage = false }) {
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  if (!recipe) {
+    return null;
+  }
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-  const completeTask = async (id) => {
+  const deleteRecipe = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
-
-      const response = await axios.patch(
-        `${BASE_URL}/tasks/complete/${id}`,
-        {},
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("complete task", response);
-
-      toast.success(response.data.message);
-      setIsRefresh(!isRefresh);
-      navigate("/");
-    } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
-    }
-  };
-
-  const deleteTask = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.delete(`${BASE_URL}/tasks/delete/${id}`, {
+      const response = await axios.delete(`${BASE_URL}/api/v1/Recipes/delete/${recipe._id}`, {
         withCredentials: true,
         headers: {
           Authorization: "Bearer " + token,
         },
       });
-
       toast.success(response.data.message);
-      setIsRefresh(!isRefresh);
-      navigate("/");
+      onDelete(recipe._id);
     } catch (error) {
       if (error.response) {
         toast.error(error.response.data.message);
       } else {
         toast.error(error.message);
       }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const isOwner = recipe?.createdBy?._id === user?._id;
+
   return (
-    <>
-      <div className="h-100 w-full flex items-center justify-center bg-teal-lightest font-sans">
-        <div
-          className={`  rounded shadow-xl p-3 mb-4 w-full lg:w-3/4 lg:max-w-lg ${
-            task.isCompleted ? "bg-zinc-300" : "bg-white"
-          }`}
-        >
-          <div>
-            <div className="flex  items-center justify-between">
-              <h3
-                className={`text-lg font-semibold ${
-                  task.isCompleted ? "line-through text-gray-400" : ""
-                }`}
-              >
-                {task.title}
-              </h3>
-              <div className={`items-center flex `}>
-                <p>
-                  {" "}
-                  <span>
-                    {`${
-                      user.role == "user"
-                        ? task.createdBy.name == user.name
-                          ? "By : @You"
-                          : "By : @Admin"
-                        : task.createdBy.name == user.name
-                        ? "By : @You"
-                        : `By : @${task.createdBy.name}`
-                    }`}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="flex mb-4 items-center justify-between">
-              <p className={`text-md ${task.isCompleted ? "line-through text-gray-400" : ""}`}>
-                {task.description}
-              </p>
-              <div className={`items-center ${user.role == "user" ? "hidden" : "flex"}`}>
-                <p>
-                  for : <span>@{task?.assignTo?.name}</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex justify-center items-center">
-                <p className="text-sm font-semibold text-gray-600">
-                  Status :{" "}
-                  <span className={task.isCompleted ? "text-green-500" : "text-red-500"}>
-                    {task.isCompleted ? " Done" : " Pending"}
-                  </span>
-                </p>
-              </div>
-              <div className="flex justify-center items-center rounded">
-                <p className="text-sm font-semibold text-gray-600">
-                  Category :{" "}
-                  <span
-                    className={
-                      task.category == "high"
-                        ? "text-red-500"
-                        : task.category == "medium"
-                        ? "text-yellow-500"
-                        : "text-green-500"
-                    }
-                  >
-                    {task.category}
-                  </span>
-                </p>
-              </div>
-              <div className="flex justify-center items-center">
-                <button
-                  className={`flex-no-shrink px-1 mr-2 border-2 rounded hover:text-white text-sm  ${
-                    task.isCompleted
-                      ? "text-gray-600 border-gray-600 hover:bg-gray-600"
-                      : "text-green-600 border-green-600 hover:bg-green-600"
-                  }`}
-                  onClick={() => completeTask(task._id)}
-                >
-                  {task.isCompleted ? "Not Done" : " Done"}
-                </button>
-                <button
-                  className="flex-no-shrink px-1 text-sm border-2 rounded text-red-600 border-red-600 hover:text-white hover:bg-red-600"
-                  onClick={() => deleteTask(task._id)}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="bg-white rounded shadow-xl p-4 mb-4 w-full">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-semibold">{recipe.title}</h3>
+        <p className="text-sm text-gray-600">
+          By: {isOwner ? "@You" : `@${recipe?.createdBy?.name || "Unknown"}`}
+        </p>
       </div>
-    </>
+      <p className="text-md mb-2">{recipe?.ingredients}</p>
+      <div className="flex justify-between items-center">
+        <p className="text-sm font-semibold text-gray-600">
+          Type: <span className="text-blue-500">{recipe.type}</span>
+        </p>
+        <p className="text-sm font-semibold text-gray-600">
+          Cooking Time: <span className="text-green-500">{recipe.cookingTime} minutes</span>
+        </p>
+      </div>
+      {isProfilePage && isOwner && (
+        <div className="mt-4 flex justify-end">
+          <button
+            className="px-3 py-1 text-sm border-2 rounded text-blue-600 border-blue-600 hover:text-white hover:bg-blue-600 mr-2"
+            onClick={() => navigate(`/editRecipe/${recipe._id}`)}
+          >
+            Edit
+          </button>
+          <button
+            className="px-3 py-1 text-sm border-2 rounded text-red-600 border-red-600 hover:text-white hover:bg-red-600"
+            onClick={deleteRecipe}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
 RecipeCard.propTypes = {
-  task: PropTypes.object.isRequired,
-  user: PropTypes.object.isRequired,
+  recipe: PropTypes.object.isRequired,
+  onDelete: PropTypes.func,
+  isProfilePage: PropTypes.bool,
 };

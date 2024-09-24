@@ -1,253 +1,265 @@
-import { useContext, useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import Cookies from "universal-cookie";
-import { useNavigate } from "react-router-dom";
+import { useState, useContext, useEffect, useCallback } from "react";
+import { FaCog, FaPlus } from "react-icons/fa";
 import { AuthContext } from "../context/AuthProvider";
-
-const cookies = new Cookies();
+import RecipeCard from "../components/RecipeCard";
+import AddRecipeModal from "../components/AddRecipeModal";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function Profile() {
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [recipes, setRecipes] = useState([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [id, setId] = useState("");
-  const [file, setFile] = useState(null);
+  const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
 
-  const { setIsLoggedIn, setLogInUser } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { isLoggedIn, user, logout, checkLoginStatus, setLoading } = useContext(AuthContext);
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-  useEffect(() => {
-    const token = localStorage.getItem("token") || cookies.get("token");
+  const navigate = useNavigate();
 
-    if (!token) {
-      navigate("/signin");
-      return;
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/users/getUser`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setName(response.data.data.name);
+      setEmail(response.data.data.email);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to fetch user data");
     }
+  }, [BASE_URL]);
 
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
+  const fetchUserRecipes = useCallback(async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/Recipes/getUserRecipes`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setRecipes(response.data.data);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      toast.error("Failed to fetch recipes");
+    }
+  }, [BASE_URL]);
 
-        const response = await axios.get(`${BASE_URL}/users/getUser`, {
-          withCredentials: true,
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
-
-        setName(response.data.data.name);
-        setEmail(response.data.data.email);
-        setId(response.data.data._id);
-      } catch (error) {
-        if (error.response) {
-          toast.error(error.response.data.message);
-        } else {
-          toast.error(error.message);
-        }
+  useEffect(() => {
+    const initializeProfile = async () => {
+      setLoading(true);
+      await checkLoginStatus();
+      if (isLoggedIn) {
+        await Promise.all([fetchUserData(), fetchUserRecipes()]);
+      } else {
+        navigate("/signin");
       }
+      setLoading(false);
     };
 
-    fetchUser();
-  }, []);
+    initializeProfile();
+  }, [isLoggedIn, navigate, fetchUserData, fetchUserRecipes, checkLoginStatus, setLoading]);
 
-  const sendData = async (e) => {
+  if (!isLoggedIn || !user) {
+    return null;
+  }
+
+  const handleDeleteAccount = () => {
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${BASE_URL}/users/delete/${user?.name}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Account deleted successfully");
+      setShowDeleteConfirmation(false);
+      setShowSettings(false);
+
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error(error.response?.data?.message || "Error deleting account. Please try again.");
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-
     try {
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Missing access token. User needs to be authenticated.");
-        return;
-      }
-
-      let user = !password.trim() === "" ? { name, email, password } : { name, email };
-
-      const response = await axios.patch(`${BASE_URL}/users/update/${id}`, user, {
-        withCredentials: true,
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
-      toast.success(response.data.message);
+      await axios.patch(
+        `${BASE_URL}/users/update/${user?.name}`,
+        { name, email },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Profile updated successfully");
+      setShowSettings(false);
+      checkLoginStatus();
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
+      console.error("Error updating profile:", error);
+      toast.error(error.response?.data?.message || "Error updating profile. Please try again.");
     }
   };
 
-  const deleteUser = async () => {
+  const handleAddRecipe = async (recipeData) => {
     try {
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Missing access token. User needs to be authenticated.");
-        return;
-      }
-
-      const response = await axios.delete(`${BASE_URL}/users/delete/${id}`, {
-        withCredentials: true,
-        headers: {
-          Authorization: "Bearer " + token,
-        },
+      await axios.post(`${BASE_URL}/Recipes/register`, recipeData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("id");
-
-      cookies.remove("token", { path: "/", sameSite: "None", secure: true });
-      cookies.remove("token");
-
-      setIsLoggedIn(false);
-      setLogInUser({});
-      toast.success(response.data.message);
-      navigate("/signin");
+      toast.success("Recipe added successfully");
+      setShowAddRecipeModal(false);
+      fetchUserRecipes(); // Refresh the recipes list
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
+      console.error("Error adding recipe:", error);
+      toast.error(error.response?.data?.message || "Error adding recipe. Please try again.");
     }
   };
 
-  // Handle file selection for import
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  // Import function
-  const handleImport = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      console.error("Missing access token. User needs to be authenticated.");
-      return;
-    }
-
-    if (!file) {
-      toast.error("Please select a file to import");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
+  const handleDeleteRecipe = async (recipeId) => {
     try {
-      const response = await axios.post(`${BASE_URL}/tasks/import`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      toast.success(response.data.message);
+      // Implement the delete logic here
+      // For now, let's just remove it from the local state
+      setRecipes((prevRecipes) => prevRecipes.filter((recipe) => recipe._id !== recipeId));
+      toast.success("Recipe deleted successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error importing tasks");
-    }
-  };
-
-  // Export function
-  const handleExport = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      console.error("Missing access token. User needs to be authenticated.");
-      return;
-    }
-    try {
-      const response = await axios.get(`${BASE_URL}/tasks/export`, {
-        responseType: "blob",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "tasks.csv");
-      document.body.appendChild(link);
-      link.click();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Error exporting tasks");
+      toast.error("Failed to delete recipe");
     }
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-        <h2 className="mb-6 text-2xl font-semibold text-gray-700 text-center">Profile Settings</h2>
-        <form className="space-y-4" onSubmit={sendData}>
-          <input
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500"
-            type="text"
-            placeholder="Username"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+    <div className="bg-gray-100 min-h-screen pt-20">
+      <div className="container mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 relative">
           <button
-            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
-            type="submit"
+            onClick={() => setShowSettings(true)}
+            className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 transition-colors"
           >
-            Save Changes
+            <FaCog size={24} />
           </button>
-        </form>
-
-        <div className="mt-6">
-          <button
-            className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition"
-            onClick={deleteUser}
-          >
-            Delete User
-          </button>
+          <h1 className="text-3xl font-bold mb-4">{user?.name}&apos;s Profile</h1>
+          <p className="text-gray-600">Email: {email}</p>
         </div>
 
-        {/* Import & Export Section */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Import & Export Tasks</h3>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className="mb-4 block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4 file:rounded-full
-            file:border-0 file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
-          />
-          <button
-            onClick={handleImport}
-            className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition mb-4"
-          >
-            Import Tasks
-          </button>
-          <button
-            onClick={handleExport}
-            className="w-full bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 transition"
-          >
-            Export Tasks
-          </button>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">My Recipes</h2>
+            <button
+              onClick={() => setShowAddRecipeModal(true)}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center"
+            >
+              <FaPlus className="mr-2" /> Add Recipe
+            </button>
+          </div>
+          {recipes.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe._id}
+                  recipe={recipe}
+                  onDelete={handleDeleteRecipe}
+                  isProfilePage={true}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">You haven&apos;t created any recipes yet.</p>
+          )}
         </div>
       </div>
+
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 className="text-2xl font-semibold mb-4">Profile Settings</h2>
+            <form onSubmit={handleUpdateProfile}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex justify-between">
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Update Profile
+                </button>
+                <button
+                  type="button"
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                  onClick={handleDeleteAccount}
+                >
+                  Delete Account
+                </button>
+              </div>
+            </form>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="mt-4 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 className="text-2xl font-semibold mb-4">Confirm Account Deletion</h2>
+            <p className="mb-6">
+              Are you sure you want to delete your account? This action cannot be undone.
+            </p>
+            <div className="flex justify-between">
+              <button
+                onClick={confirmDeleteAccount}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Yes, Delete My Account
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddRecipeModal && (
+        <AddRecipeModal
+          onClose={() => setShowAddRecipeModal(false)}
+          onAddRecipe={handleAddRecipe}
+        />
+      )}
     </div>
   );
 }
