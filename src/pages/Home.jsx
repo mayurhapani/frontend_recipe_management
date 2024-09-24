@@ -54,7 +54,7 @@ export default function Home() {
         </h1>
 
         {isLoggedIn ? (
-          <p className="text-center mb-8">Welcome back, {user.name}!</p>
+          <p className="text-center mb-8">Welcome back, {user?.name}!</p>
         ) : (
           <p className="text-center mb-8">Please sign in to manage your recipes.</p>
         )}
