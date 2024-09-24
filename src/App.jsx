@@ -6,7 +6,7 @@ import Home from "./pages/Home.jsx";
 import Profile from "./pages/Profile.jsx";
 import Signin from "./pages/Signin.jsx";
 import GlobalLoader from "./components/GlobalLoader.jsx";
-import Signup from "./pages/SignUp.jsx";
+import Signup from "./pages/Signup.jsx";
 
 function App() {
   const { loading } = useContext(AuthContext);
