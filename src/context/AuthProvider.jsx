@@ -19,10 +19,12 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+      console.log("Checking login status, token:", token); // Add this log
       if (token) {
         const response = await axios.get(`${BASE_URL}/users/getUser`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("User data from server:", response.data.data); // Add this log
         setUser(response.data.data);
         setIsLoggedIn(true);
       } else {
@@ -60,10 +62,11 @@ export const AuthProvider = ({ children }) => {
       });
       console.log("Login response:", response.data);
       if (response.data.success) {
-        localStorage.setItem("token", response.data.data.token); // Store the token
-        setIsLoggedIn(true);
+        console.log("Setting user:", response.data.data.user); // Add this log
         setUser(response.data.data.user);
-        await checkLoginStatus(); // This will update the user state with the most recent data
+        localStorage.setItem("token", response.data.data.token);
+        setIsLoggedIn(true);
+        await checkLoginStatus();
       }
       return response.data;
     } catch (error) {
@@ -86,7 +89,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, loading, setLoading, login, logout, checkLoginStatus }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, user, loading, setLoading, login, logout, checkLoginStatus }}
+    >
       {loading && <GlobalLoader />}
       {children}
     </AuthContext.Provider>

@@ -34,6 +34,11 @@ export default function Home() {
     fetchRecipes();
   }, [BASE_URL]);
 
+  useEffect(() => {
+    console.log("Home component - isLoggedIn:", isLoggedIn);
+    console.log("Home component - user:", user);
+  }, [isLoggedIn, user]);
+
   const filteredRecipes = recipes.filter((recipe) => {
     const cuisineMatch =
       recipe.cuisine && recipe.cuisine.toLowerCase().includes(searchTerm.toLowerCase());
@@ -43,7 +48,7 @@ export default function Home() {
   });
 
   if (loading) {
-    return <div>Loading...</div>; // Or a more sophisticated loading component
+    return <div>Loading...</div>;
   }
 
   return (
@@ -54,7 +59,7 @@ export default function Home() {
         </h1>
 
         {isLoggedIn ? (
-          <p className="text-center mb-8">Welcome back, {user?.name}!</p>
+          <p className="text-center mb-8">Welcome back, {user?.name || "User"}!</p>
         ) : (
           <p className="text-center mb-8">Please sign in to manage your recipes.</p>
         )}
