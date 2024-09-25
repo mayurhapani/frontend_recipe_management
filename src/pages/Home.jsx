@@ -9,7 +9,7 @@ export default function Home() {
   const [cuisines, setCuisines] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { isLoggedIn, user, loading } = useContext(AuthContext);
+  const { isLoggedIn, user, loading, checkLoginStatus } = useContext(AuthContext);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -38,6 +38,10 @@ export default function Home() {
     console.log("Home component - isLoggedIn:", isLoggedIn);
     console.log("Home component - user:", user);
   }, [isLoggedIn, user]);
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, [checkLoginStatus]);
 
   const filteredRecipes = recipes.filter((recipe) => {
     const cuisineMatch =
