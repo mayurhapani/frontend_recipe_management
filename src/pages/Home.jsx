@@ -9,19 +9,17 @@ export default function Home() {
   const [cuisines, setCuisines] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { isLoggedIn, user, loading, checkLoginStatus } = useContext(AuthContext);
+  const { isLoggedIn, user, loading } = useContext(AuthContext);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
-    // Fetch recipes when component mounts
     const fetchRecipes = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/Recipes/getAllRecipes`);
         const fetchedRecipes = response.data.data;
         setRecipes(fetchedRecipes);
 
-        // Extract unique cuisines
         const uniqueCuisines = [
           ...new Set(fetchedRecipes.map((recipe) => recipe.cuisine).filter(Boolean)),
         ];
@@ -33,15 +31,6 @@ export default function Home() {
 
     fetchRecipes();
   }, [BASE_URL]);
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, [checkLoginStatus]);
-
-  useEffect(() => {
-    console.log("Home component - isLoggedIn:", isLoggedIn);
-    console.log("Home component - user:", user);
-  }, [isLoggedIn, user]);
 
   const filteredRecipes = recipes.filter((recipe) => {
     const cuisineMatch =

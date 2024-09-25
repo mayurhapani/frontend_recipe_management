@@ -9,7 +9,13 @@ import GlobalLoader from "./components/GlobalLoader.jsx";
 import Signup from "./pages/Signup.jsx";
 
 function App() {
-  const { loading } = useContext(AuthContext);
+  const auth = useContext(AuthContext);
+
+  if (!auth) {
+    return <GlobalLoader />;
+  }
+
+  const { loading } = auth;
 
   return (
     <Router>

@@ -14,13 +14,15 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { isLoggedIn, user, logout, checkLoginStatus, setLoading } = useContext(AuthContext);
+  const { user, logout, checkLoginStatus } = useContext(AuthContext);
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const navigate = useNavigate();
 
   const fetchUserData = useCallback(async () => {
+    if (!user) return;
     try {
       const response = await axios.get(`${BASE_URL}/users/getUser`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -31,9 +33,10 @@ export default function Profile() {
       console.error("Error fetching user data:", error);
       toast.error("Failed to fetch user data");
     }
-  }, [BASE_URL]);
+  }, [BASE_URL, user]);
 
   const fetchUserRecipes = useCallback(async () => {
+    if (!user) return;
     try {
       const response = await axios.get(`${BASE_URL}/Recipes/getUserRecipes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -43,24 +46,30 @@ export default function Profile() {
       console.error("Error fetching user recipes:", error);
       toast.error("Failed to fetch recipes");
     }
-  }, [BASE_URL]);
+  }, [BASE_URL, user]);
 
   useEffect(() => {
     const initializeProfile = async () => {
-      setLoading(true);
-      await checkLoginStatus();
-      if (isLoggedIn) {
+      setIsLoading(true);
+      if (user) {
         await Promise.all([fetchUserData(), fetchUserRecipes()]);
       } else {
-        navigate("/signin");
+        await checkLoginStatus();
+        if (!user) {
+          navigate("/signin");
+        }
       }
-      setLoading(false);
+      setIsLoading(false);
     };
 
     initializeProfile();
-  }, [isLoggedIn, navigate, fetchUserData, fetchUserRecipes, checkLoginStatus, setLoading]);
+  }, [user, navigate, fetchUserData, fetchUserRecipes, checkLoginStatus]);
 
-  if (!isLoggedIn || !user) {
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
     return null;
   }
 

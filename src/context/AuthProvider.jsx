@@ -1,12 +1,11 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import GlobalLoader from "../components/GlobalLoader";
 import PropTypes from "prop-types";
 
 // Set axios to always send credentials
 axios.defaults.withCredentials = true;
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,12 +18,10 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      console.log("Checking login status, token:", token); // Add this log
       if (token) {
         const response = await axios.get(`${BASE_URL}/users/getUser`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("User data from server:", response.data.data); // Add this log
         setUser(response.data.data);
         setIsLoggedIn(true);
       } else {
@@ -35,7 +32,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
       setUser(null);
-      localStorage.removeItem("token"); // Clear the token if there's an error
+      localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
@@ -45,14 +42,6 @@ export const AuthProvider = ({ children }) => {
     checkLoginStatus();
   }, [checkLoginStatus]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   const login = async (email, password) => {
     try {
       console.log("Attempting login...");
@@ -60,9 +49,10 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      console.log("Login response:", response.data);
+
       if (response.data.success) {
-        console.log("Setting user:", response.data.data.user); // Add this log
+        console.log("Setting user:", response.data.data.user);
+
         setUser(response.data.data.user);
         localStorage.setItem("token", response.data.data.token);
         setIsLoggedIn(true);
@@ -88,11 +78,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const contextValue = {
+    isLoggedIn,
+    user,
+    loading,
+    setLoading,
+    login,
+    logout,
+    checkLoginStatus
+  };
+
   return (
-    <AuthContext.Provider
-      value={{ isLoggedIn, user, loading, setLoading, login, logout, checkLoginStatus }}
-    >
-      {loading && <GlobalLoader />}
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
