@@ -35,13 +35,13 @@ export default function Home() {
   }, [BASE_URL]);
 
   useEffect(() => {
+    checkLoginStatus();
+  }, [checkLoginStatus]);
+
+  useEffect(() => {
     console.log("Home component - isLoggedIn:", isLoggedIn);
     console.log("Home component - user:", user);
   }, [isLoggedIn, user]);
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, [checkLoginStatus]);
 
   const filteredRecipes = recipes.filter((recipe) => {
     const cuisineMatch =
