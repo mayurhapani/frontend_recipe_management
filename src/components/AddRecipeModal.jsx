@@ -73,8 +73,8 @@ export default function AddRecipeModal({ onClose, onAddRecipe }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center pt-20 z-50">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-start pt-20 z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Add New Recipe</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
