@@ -24,9 +24,11 @@ export default function Profile() {
   const fetchUserData = useCallback(async () => {
     if (!user) return;
     try {
+      console.log("Fetching user data...");
       const response = await axios.get(`${BASE_URL}/users/getUser`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+      console.log("User data fetched:", response.data);
       setName(response.data.data.name);
       setEmail(response.data.data.email);
     } catch (error) {
@@ -38,9 +40,11 @@ export default function Profile() {
   const fetchUserRecipes = useCallback(async () => {
     if (!user) return;
     try {
+      console.log("Fetching user recipes...");
       const response = await axios.get(`${BASE_URL}/Recipes/getUserRecipes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+      console.log("User recipes fetched:", response.data);
       setRecipes(response.data.data);
     } catch (error) {
       console.error("Error fetching user recipes:", error);
@@ -51,12 +55,13 @@ export default function Profile() {
   useEffect(() => {
     const initializeProfile = async () => {
       setIsLoading(true);
-
-      await checkLoginStatus(); // Ensure this is awaited
       if (user) {
         await Promise.all([fetchUserData(), fetchUserRecipes()]);
       } else {
-        navigate("/signin");
+        await checkLoginStatus();
+        if (!user) {
+          navigate("/signin");
+        }
       }
       setIsLoading(false);
     };
@@ -131,8 +136,6 @@ export default function Profile() {
 
   const handleDeleteRecipe = async (recipeId) => {
     try {
-      // Implement the delete logic here
-      // For now, let's just remove it from the local state
       setRecipes((prevRecipes) => prevRecipes.filter((recipe) => recipe._id !== recipeId));
       toast.success("Recipe deleted successfully");
     } catch (error) {
