@@ -24,11 +24,11 @@ export default function Profile() {
   const fetchUserData = useCallback(async () => {
     if (!user) return;
     try {
-      console.log("Fetching user data...");
+      // console.log("Fetching user data...");
       const response = await axios.get(`${BASE_URL}/users/getUser`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      console.log("User data fetched:", response.data);
+      // console.log("User data fetched:", response.data);
       setName(response.data.data.name);
       setEmail(response.data.data.email);
     } catch (error) {
@@ -40,11 +40,11 @@ export default function Profile() {
   const fetchUserRecipes = useCallback(async () => {
     if (!user) return;
     try {
-      console.log("Fetching user recipes...");
+      // console.log("Fetching user recipes...");
       const response = await axios.get(`${BASE_URL}/Recipes/getUserRecipes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      console.log("User recipes fetched:", response.data);
+      // console.log("User recipes fetched:", response.data);
       setRecipes(response.data.data);
     } catch (error) {
       console.error("Error fetching user recipes:", error);

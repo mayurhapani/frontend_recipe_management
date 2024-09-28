@@ -1,42 +1,36 @@
 import { createContext, useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import PropTypes from "prop-types";
+import axios from "axios";
+import { getToken, setToken, removeToken } from "../utils/tokenUtils.js";
+import GlobalLoader from "../components/GlobalLoader.jsx";
 
-// Set axios to always send credentials
-axios.defaults.withCredentials = true;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-export const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
-
   const checkLoginStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (token) {
         const response = await axios.get(`${BASE_URL}/users/getUser`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(response.data.data);
         setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
       }
     } catch (error) {
       console.error("Error checking login status:", error);
-      setIsLoggedIn(false);
-      setUser(null);
-      localStorage.removeItem("token");
+      removeToken();
     } finally {
       setLoading(false);
     }
-  }, [BASE_URL]);
+  }, []);
 
   useEffect(() => {
     checkLoginStatus();
@@ -44,49 +38,46 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      console.log("Attempting login...");
-      const response = await axios.post(`${BASE_URL}/users/login`, {
-        email,
-        password,
-      });
-
-      if (response.data.success) {
-        setUser(response.data.data.user);
-        localStorage.setItem("token", response.data.data.token);
+      const response = await axios.post(
+        `${BASE_URL}/users/login`,
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.data.success && response.data.data && response.data.data.token) {
+        setToken(response.data.data.token);
         setIsLoggedIn(true);
-        await checkLoginStatus();
+        setUser(response.data.data.user);
+        console.log(response.data);
+        return response.data;
       }
-      return response.data;
     } catch (error) {
-      console.error("Login error:", error.response ? error.response.data : error.message);
+      console.error("Error during login:", error);
       throw error;
     }
   };
 
-  const logout = async () => {
-    try {
-      console.log("Attempting logout...");
-      await axios.get(`${BASE_URL}/users/logout`, { withCredentials: true });
-      localStorage.removeItem("token"); // Clear the token
-      setIsLoggedIn(false);
-      setUser(null);
-      console.log("Logout successful");
-    } catch (error) {
-      console.error("Logout error:", error.response ? error.response.data : error.message);
-    }
+  const logout = () => {
+    removeToken();
+    setIsLoggedIn(false);
+    setUser(null);
   };
 
-  const contextValue = {
-    isLoggedIn,
-    user,
-    loading,
-    setLoading,
-    login,
-    logout,
-    checkLoginStatus,
-  };
-
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        loading,
+        setLoading,
+        login,
+        logout,
+        checkLoginStatus,
+      }}
+    >
+      {loading && <GlobalLoader />}
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 AuthProvider.propTypes = {
