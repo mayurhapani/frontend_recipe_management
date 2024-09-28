@@ -40,11 +40,7 @@ export default function RecipeCard({
       toast.success(response.data.message);
       onDelete(recipe._id);
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.response?.data?.message || error.message);
     } finally {
       setIsDeleting(false);
     }
@@ -62,11 +58,7 @@ export default function RecipeCard({
       toast.success(response.data.message);
       onUpdate(response.data.data);
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.response?.data?.message || error.message);
     }
   };
 

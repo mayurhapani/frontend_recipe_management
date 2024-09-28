@@ -94,7 +94,6 @@ export default function Profile() {
       await logout();
       navigate("/");
     } catch (error) {
-      console.error("Error deleting account:", error);
       toast.error(error.response?.data?.message || "Error deleting account. Please try again.");
     }
   };
@@ -112,7 +111,6 @@ export default function Profile() {
       setShowSettings(false);
       checkLoginStatus();
     } catch (error) {
-      console.error("Error updating profile:", error);
       toast.error(error.response?.data?.message || "Error updating profile. Please try again.");
     }
   };
