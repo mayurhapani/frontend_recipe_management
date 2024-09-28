@@ -53,16 +53,12 @@ export default function RecipeCard({
   const handleEditRecipe = async (updatedRecipe) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${BASE_URL}/api/v1/Recipes/update/${recipe._id}`,
-        updatedRecipe,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
+      const response = await axios.put(`${BASE_URL}/Recipes/update/${recipe._id}`, updatedRecipe, {
+        withCredentials: true,
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
       toast.success(response.data.message);
       onUpdate(response.data.data);
     } catch (error) {
@@ -82,9 +78,9 @@ export default function RecipeCard({
         <img
           src={recipe.image || defaultRecipeImage}
           alt={recipe.title}
-          className="w-full h-64 object-cover" // Increased image height
+          className="w-full h-64 object-cover"
           onError={(e) => {
-            e.target.onerror = null; // Prevent infinite loop
+            e.target.onerror = null;
             e.target.src = defaultRecipeImage;
           }}
         />
@@ -134,8 +130,12 @@ export default function RecipeCard({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-lg transform transition-all duration-300">
             <h2 className="text-2xl font-semibold mb-4 text-orange-800">{recipe.title}</h2>
-            <p className="text-gray-700 mb-4"><strong>Ingredients:</strong> {recipe.ingredients}</p>
-            <p className="text-gray-700 mb-4"><strong>Instructions:</strong> {recipe.instructions}</p>
+            <p className="text-gray-700 mb-4">
+              <strong>Ingredients:</strong> {recipe.ingredients}
+            </p>
+            <p className="text-gray-700 mb-4">
+              <strong>Instructions:</strong> {recipe.instructions}
+            </p>
             <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
               <div className="flex items-center">
                 <FaUtensils className="mr-1" />

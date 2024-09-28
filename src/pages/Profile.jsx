@@ -51,13 +51,12 @@ export default function Profile() {
   useEffect(() => {
     const initializeProfile = async () => {
       setIsLoading(true);
+
+      await checkLoginStatus(); // Ensure this is awaited
       if (user) {
         await Promise.all([fetchUserData(), fetchUserRecipes()]);
       } else {
-        await checkLoginStatus();
-        if (!user) {
-          navigate("/signin");
-        }
+        navigate("/signin");
       }
       setIsLoading(false);
     };
