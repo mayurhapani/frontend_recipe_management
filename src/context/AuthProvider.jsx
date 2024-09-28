@@ -51,8 +51,6 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.data.success) {
-        console.log("Setting user:", response.data.data.user);
-
         setUser(response.data.data.user);
         localStorage.setItem("token", response.data.data.token);
         setIsLoggedIn(true);
@@ -85,14 +83,10 @@ export const AuthProvider = ({ children }) => {
     setLoading,
     login,
     logout,
-    checkLoginStatus
+    checkLoginStatus,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 AuthProvider.propTypes = {

@@ -30,7 +30,7 @@ export default function RecipeCard({
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`${BASE_URL}/api/v1/Recipes/delete/${recipe._id}`, {
+      const response = await axios.delete(`${BASE_URL}/Recipes/delete/${recipe._id}`, {
         withCredentials: true,
         headers: {
           Authorization: "Bearer " + token,

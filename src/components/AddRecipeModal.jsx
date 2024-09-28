@@ -51,7 +51,8 @@ export default function AddRecipeModal({ onClose, onAddRecipe }) {
 
       const responseImage = await axios.post(
         "https://api.cloudinary.com/v1_1/mayurcloud21/upload",
-        dataImage
+        dataImage,
+        { withCredentials: false }
       );
       const uploadedImagePath = responseImage.data.url;
 

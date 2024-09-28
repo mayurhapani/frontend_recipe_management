@@ -80,7 +80,7 @@ export default function Profile() {
   const confirmDeleteAccount = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${BASE_URL}/users/delete/${user?.name}`, {
+      await axios.delete(`${BASE_URL}/users/delete/${user?._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -101,7 +101,7 @@ export default function Profile() {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `${BASE_URL}/users/update/${user?.name}`,
+        `${BASE_URL}/users/update/${user?._id}`,
         { name, email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -119,10 +119,11 @@ export default function Profile() {
       const token = localStorage.getItem("token");
       await axios.post(`${BASE_URL}/Recipes/register`, recipeData, {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       toast.success("Recipe added successfully");
       setShowAddRecipeModal(false);
-      fetchUserRecipes(); // Refresh the recipes list
+      fetchUserRecipes();
     } catch (error) {
       console.error("Error adding recipe:", error);
       toast.error(error.response?.data?.message || "Error adding recipe. Please try again.");
