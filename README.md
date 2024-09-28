@@ -14,21 +14,33 @@ live url = https://swiftrut-task3-frontend.vercel.app/
 admin email = mayur@gmail.com
 password = Mayur@123
 
-for import / export
-go to profile page // you can find options there for import and export
-You can select CSV file to import data
-suggestion = before import data export old data for data format then update that file
+## Features
 
-by default user roll = user
-only one admin // can not register new admin for security
+### Home Page
+- Users can view all recipes.
+- Logged-in users can see a "View More" button on each recipe card. Clicking this button opens a modal with full recipe details.
+- Non-logged-in users can only see the recipe image, name, and createdBy information.
 
-admin can see all the posts of the other users also can update status of task
-on home page user can see all task given by admin and created by self
+### Profile Page
+- Admin can see all posts of other users and update the status of tasks.
+- Admin can assign tasks to other users.
+- Users can see tasks given by the admin and tasks they created themselves.
+- Tasks are automatically arranged by category (priority). Completed tasks move to the bottom of the list.
+- Users can see which tasks are given by the admin (by: @admin).
 
-only admin have right to assign task to other users // there is function in admin route can
-fetch other users while adding tasks
+### Recipe Management
+- Admin can edit and delete recipes directly from the profile page.
+- Users can add new recipes from the profile page.
+- Recipes are displayed with an increased image size and a more compact details section.
 
-task will automatically arranged by its category (priority)
-if task marks as done it automatically goes at down side of list
+### Import/Export
+- Go to the profile page to find options for importing and exporting data.
+- You can select a CSV file to import data.
+- Suggestion: Before importing data, export the old data to understand the data format, then update that file.
 
-user can see which tasks are given by admin (by : @admin)
+### User Roles
+- By default, the user role is "user".
+- There is only one admin, and new admins cannot be registered for security reasons.
+
+## Theme
+- The application uses a consistent theme with gradient colors (orange to yellow) for buttons and headers.
