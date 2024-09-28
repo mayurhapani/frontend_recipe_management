@@ -1,10 +1,7 @@
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-// import Cookies from "universal-cookie";
 import { AuthContext } from "../context/AuthProvider";
-
-// const cookies = new Cookies();
 
 export default function Signin() {
   const [email, setEmail] = useState("");

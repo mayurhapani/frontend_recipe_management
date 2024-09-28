@@ -24,13 +24,14 @@ export default function Profile() {
   const fetchUserData = useCallback(async () => {
     if (!user) return;
     try {
-      // console.log("Fetching user data...");
       const response = await axios.get(`${BASE_URL}/users/getUser`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        withCredentials: true,
       });
-      // console.log("User data fetched:", response.data);
-      setName(response.data.data.name);
-      setEmail(response.data.data.email);
+
+      // console.log(response?.data?.data);
+      setName(response?.data?.data?.name);
+      setEmail(response?.data?.data?.email);
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast.error("Failed to fetch user data");
@@ -40,11 +41,9 @@ export default function Profile() {
   const fetchUserRecipes = useCallback(async () => {
     if (!user) return;
     try {
-      // console.log("Fetching user recipes...");
       const response = await axios.get(`${BASE_URL}/Recipes/getUserRecipes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      // console.log("User recipes fetched:", response.data);
       setRecipes(response.data.data);
     } catch (error) {
       console.error("Error fetching user recipes:", error);
@@ -162,9 +161,10 @@ export default function Profile() {
             <h2 className="text-2xl font-semibold">My Recipes</h2>
             <button
               onClick={() => setShowAddRecipeModal(true)}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center"
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
             >
-              <FaPlus className="mr-2" /> Add Recipe
+              <FaPlus />
+              <span>Add Recipe</span>
             </button>
           </div>
           {recipes.length > 0 ? (
@@ -174,7 +174,7 @@ export default function Profile() {
                   key={recipe._id}
                   recipe={recipe}
                   onDelete={handleDeleteRecipe}
-                  isProfilePage={true}
+                  isProfilePage
                 />
               ))}
             </div>
@@ -185,7 +185,7 @@ export default function Profile() {
       </div>
 
       {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg p-8 max-w-md w-full">
             <h2 className="text-2xl font-semibold mb-4">Profile Settings</h2>
             <form onSubmit={handleUpdateProfile}>
